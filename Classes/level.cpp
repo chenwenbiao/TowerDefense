@@ -68,6 +68,8 @@ void CLevel::update(float delta)
 			CCSequence* pSequence = CCSequence::create( action, action2, CCCallFunc::create( pObject, callfunc_selector(ITDObject::End) ),	NULL );
 			pSequence->setTag(0);
  			pObject->runAction( pSequence );
+
+			pObject->scheduleUpdate();
 			m_wCurrentIndex++;
 		} while (0);
 	}	

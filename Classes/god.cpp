@@ -27,7 +27,7 @@ ITDObject* CTDGod::Create( const String& strName, INode* pNode, const String& st
 	}
 	else if ( strType == IEnemy::strTypeEnemy )
 	{
-		pObject = IEnemy::create( "enemy.png" );
+		pObject = IEnemy::create( "enemy.png",pNode );
 		m_pEnemy->addObject( pObject );
 		pNode->addChild( pObject );
 	}

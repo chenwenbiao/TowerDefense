@@ -13,13 +13,22 @@ typedef CCObject IObject;
 
 NAMESPACE_TD_BEGIN
 class ITDObject;
-class IAi;
+class IAi : public INode{
+public:
+	virtual void Update( float dt, ITDObject* pObject ) = 0;
+	CC_SYNTHESIZE( String, m_strType, Type )
+};
 
 class ITDObject : public ISprite{
-	DEF_MEMBER( IAi*, m_pAI, AI )
-	DEF_MEMBER( String, m_strType, Type)
+	CC_SYNTHESIZE( IAi*, m_pAI, AI )
+	CC_SYNTHESIZE( String, m_strType, Type)
+	CC_SYNTHESIZE_RETAIN( CCProgressTimer*, m_pHPProgress, HPProgress );
 public:
-	ITDObject(const String& strType ) : m_pAI(0), m_strType( strType), m_strState("") {}
+	ITDObject(const String& strType ) : m_pAI(0),m_pHPProgress(0), m_strType( strType), m_strState("") {}
+	~ITDObject(){
+		CC_SAFE_RELEASE_NULL( m_pHPProgress );
+		CC_SAFE_RELEASE_NULL( m_pAI );
+	}
 	virtual void ChangeState( const String& strState ) = 0;	
 	virtual void End(){}
 	int m_nHP;
@@ -78,12 +87,6 @@ class ITDLevelMgr : public CSingleton<ITDLevelMgr>
 public:
 	virtual bool Ini( const String& strPath ) = 0;
 	virtual ITDLevel* GetLevel( unsigned int wIndex ) = 0;
-};
-
-class IAi : public INode{
-public:
-	virtual void Update( float dt, ITDObject* pObject ) = 0;
-	CC_SYNTHESIZE( String, m_strType, Type )
 };
 
 class IAiMgr : public CSingleton<IAiMgr>{

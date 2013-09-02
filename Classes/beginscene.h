@@ -1,5 +1,6 @@
 #pragma once
 #include "cocos2d.h"
+#include "interfacedef.h"
 using namespace cocos2d;
 class CBegin : public cocos2d::CCLayer
 {
@@ -14,6 +15,8 @@ public:
 	void menuCloseCallback(CCObject* pSender);
 
 	virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
+
+	void CreateSprite( const String& strList, const String& strPng, int picNbr, CCPoint ptStart, float nTime = 0.1 );
 
 	// implement the "static node()" method manually
 	CREATE_FUNC(CBegin);

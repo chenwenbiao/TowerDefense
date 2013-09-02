@@ -75,31 +75,32 @@ bool CBegin::init()
 	// add the label as a child to this layer
 	this->addChild(pLabel, 1);
 
-	//CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("enemy.plist");
-//	CCSprite* pSprite = CCSprite::createWithSpriteFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("filename_1.png"));
-
-// 	CCAnimation* animation = CCAnimation::create();
-// 	for ( int i = 1; i < 19; i++ )
-// 	{
-// 		char szName[100] = {0};
-// 		sprintf(szName, "filename_%d.png", i);
-// 		animation->addSpriteFrame( CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(szName));
-// 	}
+ 	CreateSprite( "map1/1.plist","map1/1.png",20, ccp(100,100) );
 // 
-// 	pSprite->setPosition( ccp(200,200) );
-// 	// should last 2.8 seconds. And there are 14 frames.
-// 	animation->setDelayPerUnit(0.1);
-// 	animation->setRestoreOriginalFrame(true);
-// 
-// 	CCAnimate* action = CCAnimate::create(animation);
-// // 	CCCardinalSplineTo *action2;
-// // 
-// // 	CCCardinalSplineTo* reverse2 = (CCCardinalSplineTo*)action2->reverse();		
-// 	pSprite->runAction( CCRepeatForever::create( action ) );
+ 	CreateSprite( "map1/2.plist","map1/2.png",20, ccp(200,100) );
 
-	//this->addChild( pSprite );
+
+// 
+// 	CCSprite *psSprite1 = CCSprite::create("green.png");
+// 	CCSprite *psSprite2 = CCSprite::create("red.png");
+
+
+	
+// 	//利用精灵创建进度条，并设置一些属性
+// 	progresstime2 = CCProgressTimer::create(psSprite2);    //初始化CCProgressTimer
+// 	progresstime2->setPercentage(100.0f);    //设置初始百分比的值
+// 	progresstime2->setScale(3);            //设置进度条大小为原始的3倍
+// 	progresstime2->setBarChangeRate(ccp(1, 0));    //设置进度条的长度和高度开始变化的大小
+// 	progresstime2->setType(kCCProgressTimerTypeBar);    //设置进度条为水平
+// 	progresstime2->setPosition(ccp(size.width/2, size.height/2 - 30));    //放置进度条位置
+// 
+// 	this->addChild(progresstime2, 101);    //加入Layer中
+
+	this->scheduleUpdate();        //调用定时器更新进度条
+
 	return true;
 }
+
 
 US_TD
 void CBegin::menuCloseCallback(CCObject* pSender)
@@ -110,4 +111,39 @@ void CBegin::menuCloseCallback(CCObject* pSender)
 void CBegin::ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent)
 {
 	int a = 0;
+}
+
+
+void CBegin::CreateSprite( const String& strList, const String& strPng, int picNbr, CCPoint ptStart, float nTime )
+{
+
+	CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( strList.c_str() ,strPng.c_str() );
+	CCSprite* pSprite = CCSprite::createWithSpriteFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName("sprite_1.png"));
+
+	CCAnimation* animation = CCAnimation::create();
+	for ( int i = 0; i < picNbr; i++ )
+	{
+		char szName[100] = {0};
+		sprintf(szName, "sprite_%d.png", i);
+		animation->addSpriteFrame( CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(szName));
+	}
+	pSprite->setPosition( ptStart );
+	animation->setDelayPerUnit(nTime);
+	CCAnimate* action = CCAnimate::create(animation);	
+	pSprite->runAction( CCRepeatForever::create( action ) );
+
+	this->addChild( pSprite );
+
+	CCProgressTimer* progresstime1 = CCProgressTimer::create( CCSprite::create("hp.png") );
+	//利用精灵创建进度条，并设置一些属性
+	//progresstime1 = CCProgressTimer::create(psSprite1);    //初始化CCProgressTimer
+	progresstime1->setPercentage(3);    //设置初始百分比的值
+	progresstime1->setScale(3);            //设置进度条大小为原始的3倍
+	progresstime1->setBarChangeRate(ccp(1, 0));    //设置进度条的长度和高度开始变化的大小
+
+
+	progresstime1->setType(kCCProgressTimerTypeBar);    //设置进度条为水平
+	progresstime1->setPosition( ccp( ptStart.x , ptStart.y + pSprite->getContentSize().height ) );    //放置进度条位置
+	progresstime1->setPercentage( 50 );
+	this->addChild(progresstime1, 100);    //加入Layer中
 }

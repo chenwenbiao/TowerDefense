@@ -110,13 +110,13 @@ void ISkill::update( float dt )
 		return;
 	}
 	move( m_pTargetObject->getPosition() );
-	if ( collisionWithCircle( this->getPosition(), 10, m_pTargetObject->getPosition(), 10 ) )
+	if ( collisionWithCircle( this->getPosition(), 2, m_pTargetObject->getPosition(), 2 ) )
 	{
 		m_pTargetObject->ChangeState("");
 		m_pTargetObject->m_nHP--;
 		if ( m_pTargetObject->m_nHP == 0 )
 		{
-			m_pTargetObject->removeFromParentAndCleanup( true );
+			m_pTargetObject->End();
 			ITDGod::GetSingletonPtr()->Remove( m_pTargetObject );
 		}	
 		End();	

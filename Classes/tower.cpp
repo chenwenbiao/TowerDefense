@@ -55,16 +55,22 @@ void ITower::update( float dt )
 
 void ITower::End()
 {
-	
+	m_pAI = NULL;
 }
 
-IEnemy::IEnemy() : ITDObject( IEnemy::strTypeEnemy ){
-	m_nHP = 100;
+IEnemy::IEnemy( INode* pNode ) : ITDObject( IEnemy::strTypeEnemy ){
+	m_nHP = 99;
+	CCProgressTimer* pHP = CCProgressTimer::create( CCSprite::create( "hp.png" ) );
+	setHPProgress( pHP );
+	pHP->setPercentage(100);		//设置初始百分比的值
+	pHP->setBarChangeRate(ccp(1, 0));    //设置进度条的长度和高度开始变化的大小
+	pHP->setType(kCCProgressTimerTypeBar);    //设置进度条为水平
+	pNode->addChild( pHP );
 }
 
-ITDObject* IEnemy::create( const String& strFileName )
+ITDObject* IEnemy::create( const String& strFileName, INode* pNode )
 {
-	IEnemy* pBody = new IEnemy();
+	IEnemy* pBody = new IEnemy( pNode);
 	pBody->initWithSpriteFrameName( strFileName.c_str() );
 	pBody->autorelease();
 	return pBody;
@@ -72,14 +78,14 @@ ITDObject* IEnemy::create( const String& strFileName )
 
 ITDObject* IEnemy::create( int nX, int nY, const String& strFileName )
 {
-	ITDObject* pBody = IEnemy::create( strFileName );
+	ITDObject* pBody = IEnemy::create( strFileName, NULL );
 	pBody->setPosition( ccp(nX, nY) );
 	return pBody;
 }
 
 ITDObject* IEnemy::create( CCTexture2D* pTextrue2D )
 {
-	ITDObject* pBody = new IEnemy();
+	ITDObject* pBody = new IEnemy( NULL );
 	pBody->initWithTexture( pTextrue2D );
 	pBody->autorelease();
 	return pBody;
@@ -99,6 +105,8 @@ void IEnemy::ChangeState( const String& strState )
 
 void IEnemy::update( float dt )
 {
+	getHPProgress()->setPosition( ccp( this->getPositionX() , this->getPositionY() + this->getContentSize().height ) );    //放置进度条位置
+	getHPProgress()->setPercentage( m_nHP );
 	if ( m_pAI != 0 )
 	{
 		m_pAI->Update( dt, this );
@@ -107,7 +115,9 @@ void IEnemy::update( float dt )
 
 void IEnemy::End()
 {
+	getHPProgress()->removeFromParentAndCleanup( true );
 	this->removeFromParentAndCleanup( true );
+
 	ITDGod::GetSingletonPtr()->Remove( this );
 }
 
