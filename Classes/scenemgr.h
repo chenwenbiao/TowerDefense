@@ -117,9 +117,24 @@ public:
 	IAi( IGObject* pTarget, SEL_CallFuncND func ): m_pTarget(NULL), m_func( func ){
 		setTarget( pTarget );
 	};
-	IAi(){}
+	IAi(): m_pTarget(NULL){}
 	~IAi(){
 		CC_SAFE_RELEASE_NULL(m_pTarget);
+	}
+	IBaseObject* copyWithZone(CCZone* pZone)
+	{
+		CCZone* pNewZone = NULL;
+		IAi* pRet = NULL;
+		if(pZone && pZone->m_pCopyObject) //in case of being called at sub class
+		{
+			pRet = (IAi*)(pZone->m_pCopyObject);
+		}
+		else
+		{
+			pRet = new IAi();
+			pZone = pNewZone = new CCZone(pRet);
+		}
+		return pRet;
 	}
 public:
 	virtual bool UpdateAi( float dt ){
@@ -145,6 +160,21 @@ public:
 		// make hp
 		// remove
 		// 
+	}
+	IBaseObject* copyWithZone(CCZone* pZone)
+	{
+		CCZone* pNewZone = NULL;
+		ISkill* pRet = NULL;
+		if(pZone && pZone->m_pCopyObject) //in case of being called at sub class
+		{
+			pRet = (ISkill*)(pZone->m_pCopyObject);
+		}
+		else
+		{
+			pRet = new ISkill();
+			pZone = pNewZone = new CCZone(pRet);
+		}
+		return pRet;
 	}
 };
 
@@ -190,8 +220,14 @@ public:
 		
 		if ( m_pAis != NULL )
 		{
-			IArray* pCopy = (IArray*)m_pAis->copyWithZone( NULL );
-			pRet->setAis(pCopy);
+			//IArray* pCopy = (IArray*)m_pAis->copy();
+			IBaseObject* pObject = NULL;
+			CCARRAY_FOREACH( m_pAis, pObject ){
+				IAi* pTemp = dynamic_cast<IAi*>(pObject);
+				if ( pTemp ){
+					pRet->AddAi( (IAi*)pTemp->copy() );
+				}
+			}
 		}
 		if ( m_pFollowers != NULL )
 		{
@@ -223,6 +259,7 @@ public:
 	}
 
 	virtual void AddAi( IAi* pAi ){
+		pAi->setTarget( this );
 		m_pAis->addObject( pAi );
 	}
 	virtual void ChangeState( const String& strState ){
@@ -265,10 +302,10 @@ class CMoveAi : public IAi
 {
 	CC_SYNTHESIZE_RETAIN( IPath*, m_pPath, Path )
 public:
-	CMoveAi( IPath* pPath, IGObject* pTarget, SEL_CallFuncND func ) : IAi( pTarget, func ){
+	CMoveAi( IPath* pPath, IGObject* pTarget, SEL_CallFuncND func ) : IAi( pTarget, func ), m_pPath(NULL){
 		setPath( pPath );
 	}
-	CMoveAi(){}
+	CMoveAi(): m_pPath(NULL){}
 	~CMoveAi(){
 		CC_SAFE_RELEASE_NULL( m_pPath );
 	}
@@ -286,21 +323,26 @@ public:
 			pZone = pNewZone = new CCZone(pRet);
 		}
 		// don't copy target and callbackfunc
-		pRet->setPath( (IPath*)m_pPath->copy() );
+		if ( m_pPath != NULL )
+		{
+			pRet->setPath( (IPath*)m_pPath->copy());
+		}	
 		CC_SAFE_DELETE(pNewZone);
 		return pRet;
 	}
 public:
 
 	bool UpdateAi( float dt ){
-		move( dt );
+		Move( dt );
 		if ( IsEnd() ){
 			/*this->func( NULL, NULL );*/
 		}
 		return false;
 	}
 protected:
-	void Move( float dt ){}
+	void Move( float dt ){
+		getTarget()->runAction( CCMoveBy::create( 1, ccp(10,10) ) );
+	}
 	bool IsEnd(){ return false;}
 };
 
