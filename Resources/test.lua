@@ -1,115 +1,155 @@
-require "object"
-require "layer"
+require( "object" )
+function callbackfunc( name, t, pause )
+	CCDirector:sharedDirector():getScheduler():scheduleScriptFunc(name, t, pause)
+end
 
 
 function main()
-	local batchnode = CCSpriteBatchNode:create("enemy.png")
 	local visibleSize = CCDirector:sharedDirector():getVisibleSize()
     local origin = CCDirector:sharedDirector():getVisibleOrigin()
+	local scene = CCScene:create()
+	CCDirector:sharedDirector():runWithScene(scene)
+	
+	local batchnode = CCSpriteBatchNode:create("enemy.png")
 	local spbt = CCSpriteBatchNode:create( "Icon.png" );
-	local menu
-	local function createmap()
-		local map1 = map:create();
-        local layer = map1:ini( "bk.jpg" );
-		return layer;
-	end
+	
+	local function createmaplayer( scene )
+		local maplayer = { layer, bPause = false, obs = {}, towers = {} }
 		
-	local bklayer = createmap();
-
-    bklayer:addChild( batchnode );
-    bklayer:addChild(spbt)
-	local function remove(send)
-		send:removeFromParentAndCleanup(true)
-	end
-
-	local function createenemy()
-			local sp = CCSprite:createWithTexture( batchnode:getTexture() )
-			batchnode:addChild(sp)
+		local function createlayer()
+			local layer = CCLayer:create();
+			layer:addChild( CCSprite:create("bk.jpg"))
+			scene:addChild( layer )
+			layer:addChild( batchnode )
+			return layer
+		end
+		
+		function createenemy()
+			if maplayer.bPause == false then
+				ob = IntelligentObject:create()
+				ob:spriteini( batchnode:getTexture(), batchnode )
+			--	local ccSprite = CCSprite:createWithTexture( batchnode:getTexture() )
+			--	batchnode:addChild( ccSprite )
+				--ob:getsprite():runAction( CCJumpTo:create( 2, ccp(300,300), 100, 10 ))
+				
+				local ai = jumpai:create();
+				ai:settarget( ob )
+				ai:setendpt( ccp(300,300) )
+				ob:addai( ai )
+				
+				ob:getsprite():retain()
+				table.insert( map.obs, ob )
+			end
+		end
+		function updateai()
+			for i, n in pairs(map.obs) do 
+				local temp = n:getsprite():retainCount();
+				if temp ~= 1 then
+					n:update()		
+				end	
+			end 
 			
-			local array = CCArray:create()
-			array:addObject( CCMoveTo:create( 5, ccp(200,200) ) )
-			--array:addObject( CCCallFunc:create(remove ) )
-			array:addObject(CCCallFuncN:create(remove) )
-			local action = CCSequence:create(array)
-			sp:runAction(action)
-	end
-
-	local function createLayerMenu()
-        local layerMenu = CCLayer:create()
-
-        local menuPopup, menuTools, effectID
-
-        local function menuCallbackClosePopup()
-            -- stop test sound effect
-            SimpleAudioEngine:sharedEngine():stopEffect(effectID)
-            menuPopup:setVisible(false)
-            require "object"
-            local sp = createobject("object")
-            sp:spriteini("enemy.png")
-            bklayer:addChild(sp)
-			--createenemy();
-        end
-
-        local function menuCallbackOpenPopup()
-            -- loop test sound effect
-            local effectPath = CCFileUtils:sharedFileUtils():fullPathForFilename("effect1.wav")
-            effectID = SimpleAudioEngine:sharedEngine():playEffect(effectPath)
-          --  menuPopup:setVisible(true)
+			for i, n in pairs(map.towers) do 
+				local temp = n:getsprite():retainCount();
+				if temp ~= 1 then
+					n:update()		
+				end	
+			end 
+		end
+		
+		
+		callbackfunc( createenemy, 1, false )
+		callbackfunc( updateai, 1, false )
+		
+		maplayer.layer = createlayer()
+		
+		function maplayer:updateobj( src, objtype )
 			
-            local sp = createobject("object")
-            sp:spriteini("enemy.png")
-            bklayer:addChild(sp:getsprite())
+		end
+		function maplayer:addobj( objtype )
+			
+		end		
+		
+		local touchBeginPoint = nil
+
+        local function onTouchBegan(x, y)   
+            touchBeginPoint = {x = x, y = y}    
+			
+				ob = IntelligentObject:create()
+				ob:spriteini( batchnode:getTexture(), batchnode )
 						
-			local a = moveai:create();
-			a:settarget( sp )
-			a:setendpt( point(200,200) )
-			sp:addai( a )
-    
-
-            local bt = Bullet:create();
-            bt:ini( sp, batchnode:getTexture(), bklayer ,10 ) 
-           -- local b = jumpai:create();
-          --  b:settarget( sp )
-           -- b:setendpt( ccp(200,200) )
-          --  sp:addai( b )
-			if menu == nil then
-				menu = TowerSelectLayer:ini( ccp(200,200), sp, bklayer )
-			else
-				menu:setVisible( true )
-			end
-			local function update()
-				sp:update();
-			end
-			callbackfunc( update, 1, false )
+				local ai = attackai:create();
+				ai:settarget( ob )
+				ai:setlist(map.obs)
+				ob:addai( ai )
+				ob:getsprite():retain()
+				ob:setpos( ccp(x,y) )
+				table.insert( map.towers, ob )
+				
+			return true
         end
 
-        -- add a popup menu
-        local menuPopupItem = CCMenuItemImage:create("menu2.png", "menu2.png")
-        menuPopupItem:setPosition(0, 0)
-        menuPopupItem:registerScriptTapHandler(menuCallbackClosePopup)
-        menuPopup = CCMenu:createWithItem(menuPopupItem)
-        menuPopup:setPosition(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2)
-        menuPopup:setVisible(false)
-        layerMenu:addChild(menuPopup)
+        local function onTouchMoved(x, y)
+            if touchBeginPoint then
+               -- local cx, cy = layerFarm:getPosition()
+               -- layerFarm:setPosition(cx + x - touchBeginPoint.x,
+                --                      cy + y - touchBeginPoint.y)
+                touchBeginPoint = {x = x, y = y}
+            end
+        end
 
-        -- add the left-bottom "tools" menu to invoke menuPopup
-        local menuToolsItem = CCMenuItemImage:create("menu1.png", "menu1.png")
-        menuToolsItem:setPosition(0, 0)
-        menuToolsItem:registerScriptTapHandler(menuCallbackOpenPopup)
-        menuTools = CCMenu:createWithItem(menuToolsItem)
-        local itemWidth = menuToolsItem:getContentSize().width
-        local itemHeight = menuToolsItem:getContentSize().height
-        menuTools:setPosition(origin.x + itemWidth/2, origin.y + itemHeight/2)
-        layerMenu:addChild(menuTools)
+        local function onTouchEnded(x, y)
+            touchBeginPoint = nil
+        end
 
-        return layerMenu
-    end
-    local sceneGame = CCScene:create()
-    sceneGame:addChild( bklayer )
-    sceneGame:addChild(createLayerMenu())
-    CCDirector:sharedDirector():runWithScene(sceneGame)
+        local function onTouch(eventType, x, y)
+            if eventType == "began" then   
+                return onTouchBegan(x, y)
+            elseif eventType == "moved" then
+                return onTouchMoved(x, y)
+            else
+                return onTouchEnded(x, y)
+            end
+        end
 
-	--create menu
-    
+        maplayer.layer:registerScriptTouchHandler(onTouch)
+        maplayer.layer:setTouchEnabled(true)
+		return maplayer
+	end
+	
+	local function createcontrollayer( scene )
+		local controllayer = { layer }
+		
+		local function createlayer()
+			local layer = CCLayer:create();
+			layer:addChild( CCSprite:create("bk.jpg"))
+			scene:addChild( layer )
+			return layer
+		end
+		
+		controllayer.layer = createlayer()
+		
+		local function menucallback()
+			map.addobj("1")
+		end	
+			
+		function controllayer:updatemenu( x,y )		
+			local menuPopupItem = CCMenuItemImage:create("menu.png", "menu.png")
+			menuPopupItem:setPosition(0, 0)
+			menuPopupItem:registerScriptTapHandler(menucallback)
+			menuPopup = CCMenu:createWithItem(menuPopupItem)
+			menuPopup:setPosition( x, y )
+			menuPopup:setVisible(true)
+			controllayer.layer:addChild(menuPopup)
+		end
+		function controllayer:addobjmenu()
+			
+		end
+		
+		return controllayer
+	end  
+	map = createmaplayer( scene )
+	
+	--control = createcontrollayer( scene )
 end
 main();
