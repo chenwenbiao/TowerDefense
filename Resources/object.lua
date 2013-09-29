@@ -21,30 +21,38 @@ function object:print()
 	end
 end
 
-IntelligentObject = object:create({ objai, aicount = 0, actions = { oncreate, onidle, ondestory }, sprite, skill, step = 10,pos = ccp(0,0) })
-
-function IntelligentObject:addai( a )
-	self.objai = a
+IntelligentObject = object:create({ ais = {}, actions = { oncreate, onidle, ondestory }, sprite, skills, step = 10, pos = ccp(0,0), attackrange = 10 })
+function IntelligentObject:ini( pic, layer )
+	self.spriteini( pic, layer )
 end
+
+function IntelligentObject:addai( obai )
+	table.insert(self.ais, obai)
+end
+
 function IntelligentObject:addskill( skill )
-	self.skill[#(self.skill)] = skill
+	table.insert(self.skills, skill)
 end
 function IntelligentObject:print()
-	for i = 0 , aicount do
-		print( self.ai[i] )
-	end 
+	print(self.name)
+	for i,n in pairs(self.ais) do 
+		n:doai()
+	end	
 end 
 function IntelligentObject:update()
-	self.objai:doai()
+	for i,n in pairs(self.ais) do 
+		n:doai()
+	end	
 end
 function IntelligentObject:oncreate()
-	self.actions["oncreate"].doaction();
+	self.actions["oncreate"]:doaction();
 end
 function IntelligentObject:setaction( name, ac )
 	self.actions[name] = ac
 end
-function IntelligentObject:spriteini(p)
-	self.sprite = CCSprite:create(p)
+function IntelligentObject:spriteini(pic, layer)
+	self.sprite = CCSprite:createWithTexture( pic )
+	layer:addChild( self.sprite )
 --	callbackfunc( self.update, 1, false )
 end
 function IntelligentObject:getsprite()
@@ -70,7 +78,10 @@ function IntelligentObject:getstep()
 	return self.pos
 end
 
-actions = object:create( {} )
+actions = object:create( { plist, pic, count } )
+function actions:ini()
+	
+end
 function actions:doaction()
 	print("actions");
 end
@@ -105,25 +116,6 @@ function Bullet:ini( target, pic, layer, demage )
 	self.demage = demage;
 	layer:addChild( self.sprite )
 end 
-
-TowerSelectLayer = object:create( {pos,target,menuitem} )
-
-function TowerSelectLayer:ini( pos, target, layer )
-	local function createmenu( normalpic, selectpic, pos )
-		local function menuCallback()
-			menuPopup:setVisible(false)
-		end
-		local menuPopupItem = CCMenuItemImage:create(normalpic, selectpic)
-        menuPopupItem:setPosition(pos)
-        menuPopupItem:registerScriptTapHandler(menuCallback)
-        menuPopup = CCMenu:createWithItem(menuPopupItem)
-        menuPopup:setPosition( pos )
-        menuPopup:setVisible(true)
-        layer:addChild(menuPopup)
-		return menuPopup
-	end
-	return createmenu( "CloseNormal.png", "CloseNormal.png", pos );
-end
 
 function createobject(name)	
 	local obj = nil;
@@ -172,7 +164,7 @@ function ai:settarget( target )
 end
 moveai = ai:create( { endpt } )
 function moveai:doai()
-	local sp = self.target:getsprite();
+	--[[local sp = self.target:getsprite();
 	local function remove()
 		self.target:removeFromParentAndCleanup( true )
 	end
@@ -181,7 +173,7 @@ function moveai:doai()
 	array:addObject( CCMoveTo:create( 5, self.endpt) )
 	array:addObject(CCCallFuncN:create(remove) )
 	local action = CCSequence:create(array)
-	sp:runAction(action)
+	sp:runAction(action)--]]
 			
 	print("moveai")
 end
@@ -196,7 +188,14 @@ function jumpai:doai()
 	local function remove()
 		
 	end
-	sp:runAction( CCSequence:create( CCMoveTo:create(5, self.endpt), CCCallFunc:create( remove ), nil ) )
+	local temp1 = sp:retainCount();
+	if sp:getPositionX() > 100 then
+		sp:removeFromParentAndCleanup( true )
+		local temp2 = sp:retainCount();
+	else
+		sp:runAction( CCMoveBy:create( 1, ccp(100,100) ) )
+	end
+	--sp:runAction( CCSequence:create( CCMoveTo:create(5, self.endpt), CCCallFunc:create( remove ), nil ) )
 	print("moveai")
 end
 function jumpai:setendpt( endpt )
@@ -207,12 +206,37 @@ function point( x, y )
 	return ccp( x, y )
 end
 
---[[createobject("object"):print()
+attackai = ai:create( { objlist } )
+function attackai:doai()
+	for i,n in pairs( self.objlist) do
+		local function Distance( ptsrc, pttarget )
+			return 100
+		end		
+		local dis = Distance( self.target:getsprite():getPosition(), n:getsprite():getPosition() )
+		if dis < 100 then
+			n:getsprite():removeFromParentAndCleanup()
+		end
+		
+	end
+end
+function attackai:setlist( list )
+	self.objlist = list
+end
 
-local hu = createobject("human")
-hu:addai( createobject("moveai") );
-hu:print();
-hu:update();
+--[[obs = {}
 
-hu:setaction("oncreate",actions:create())
-hu:oncreate();--]]
+ob = IntelligentObject:create()
+ob:set( "mxm", 0 )
+ob:addai( moveai:create() )
+ob:addai( moveai:create() )
+ob:addai( moveai:create() )
+ob:setaction( "oncreate", actions:create() )
+ob:oncreate()
+
+table.insert(obs, ob)
+
+for i, n in pairs(obs) do
+	n:print()
+end
+
+local ds = 0;--]]
