@@ -21,13 +21,17 @@ function object:print()
 	end
 end
 
-IntelligentObject = object:create({ ais = {}, actions = { oncreate, onidle, ondestory }, sprite, skills, step = 10, pos = ccp(0,0), attackrange = 10 })
+IntelligentObject = object:create({ ais = {}, followers = {}, actions = { oncreate, onidle, ondestory }, sprite, skills, step = 10, pos = ccp(0,0), attackrange = 10 })
 function IntelligentObject:ini( pic, layer )
-	self.spriteini( pic, layer )
+	IntelligentObject:spriteini( pic, layer )
 end
 
 function IntelligentObject:addai( obai )
 	table.insert(self.ais, obai)
+end
+
+function IntelligentObject:addfollower( obfollower )
+	table.insert(self.followers, obfollower)
 end
 
 function IntelligentObject:addskill( skill )
@@ -39,11 +43,23 @@ function IntelligentObject:print()
 		n:doai()
 	end	
 end 
-function IntelligentObject:update()
+function IntelligentObject:updateai()
 	for i,n in pairs(self.ais) do 
-		n:doai()
+		n:doai( self )
 	end	
 end
+function IntelligentObject:updatefollowers()
+	for i,n in pairs(self.followers) do 
+		n:update( self.sprite )
+	end	
+end
+
+function IntelligentObject:update()
+	IntelligentObject:updateai()
+	--IntelligentObject:updatefollowers()
+end
+
+
 function IntelligentObject:oncreate()
 	self.actions["oncreate"]:doaction();
 end
@@ -52,6 +68,7 @@ function IntelligentObject:setaction( name, ac )
 end
 function IntelligentObject:spriteini(pic, layer)
 	self.sprite = CCSprite:createWithTexture( pic )
+	self.sprite:setPosition( ccp(0,0) )
 	layer:addChild( self.sprite )
 --	callbackfunc( self.update, 1, false )
 end
@@ -70,12 +87,28 @@ end
 function IntelligentObject:getstep()
 	return self.step
 end
-function IntelligentObject:setpos(pos)
-	self.pos = pos
-	self.sprite:setPosition( pos )
+function IntelligentObject:setpos(ps)
+	self.sprite:setPosition( ps )
+	IntelligentObject:updatefollowers()
 end
-function IntelligentObject:getstep()
-	return self.pos
+function IntelligentObject:getpos()
+	return self.sprite:getPositionX(),self.sprite:getPositionY()
+end
+
+
+hp = object:create( { target, label } )
+function hp:ini( layer, target )
+	self.target = target
+	self.label = CCLabelTTF:create("mxm","Arial",18);
+	self.label:setVisible( false )
+	layer:addChild( self.label )
+end
+
+function hp:update( sprite )
+	local posx, posy = self.target:getpos()
+	self.label:setPosition( posx, posy )
+	--self.label:setString( posx )
+	self.label:setVisible( true  )
 end
 
 actions = object:create( { plist, pic, count } )
@@ -164,17 +197,17 @@ function ai:settarget( target )
 end
 moveai = ai:create( { endpt } )
 function moveai:doai()
-	--[[local sp = self.target:getsprite();
-	local function remove()
-		self.target:removeFromParentAndCleanup( true )
+	local sp = self.target:getsprite();
+	
+	local posx, posy = self.target:getpos();
+
+	if sp:getPositionX() > 300 then
+		sp:removeFromParentAndCleanup( true )
+		local temp2 = sp:retainCount();
+	else
+		self.target:setpos( ccp( posx-1,posy-1))
 	end
-		
-	local array = CCArray:create()
-	array:addObject( CCMoveTo:create( 5, self.endpt) )
-	array:addObject(CCCallFuncN:create(remove) )
-	local action = CCSequence:create(array)
-	sp:runAction(action)--]]
-			
+	--sp:runAction( CCSequence:create( CCMoveTo:create(5, self.endpt), CCCallFunc:create( remove ), nil ) )
 	print("moveai")
 end
 function moveai:setendpt( endpt )
@@ -182,20 +215,11 @@ function moveai:setendpt( endpt )
 end
 
 jumpai = ai:create( { endpt } )
-function jumpai:doai()
-	local sp = self.target:getsprite();
-	--sp:setPosition( self.endpt)
-	local function remove()
-		
-	end
-	local temp1 = sp:retainCount();
-	if sp:getPositionX() > 100 then
-		sp:removeFromParentAndCleanup( true )
-		local temp2 = sp:retainCount();
-	else
-		sp:runAction( CCMoveBy:create( 1, ccp(100,100) ) )
-	end
-	--sp:runAction( CCSequence:create( CCMoveTo:create(5, self.endpt), CCCallFunc:create( remove ), nil ) )
+function jumpai:doai( ob )
+	local posx, posy = ob.getpos();
+	posx = posx + 1
+	posy = posy + 1
+	ob.setpos( ccp( posx, posy ) )
 	print("moveai")
 end
 function jumpai:setendpt( endpt )
@@ -209,10 +233,9 @@ end
 attackai = ai:create( { objlist } )
 function attackai:doai()
 	for i,n in pairs( self.objlist) do
-		local function Distance( ptsrc, pttarget )
-			return 100
-		end		
-		local dis = Distance( self.target:getsprite():getPosition(), n:getsprite():getPosition() )
+		local ptsrc = self.target:getsprite():getPosition()
+		local pttarget = n:getsprite():getPosition()
+		local dis = ccpDistanceSQ( ptsrc, pttarget )
 		if dis < 100 then
 			n:getsprite():removeFromParentAndCleanup()
 		end
