@@ -14,31 +14,45 @@ function main()
 	local spbt = CCSpriteBatchNode:create( "Icon.png" );
 	
 	local function createmaplayer( scene )
-		local maplayer = { layer, bPause = false, obs = {}, towers = {} }
+		local maplayer = { layer, bPause = false, obs = {}, towers = {} , enemycounts = 0 }
 		
 		local function createlayer()
 			local layer = CCLayer:create();
 			layer:addChild( CCSprite:create("bk.jpg"))
 			scene:addChild( layer )
 			layer:addChild( batchnode )
+
 			return layer
 		end
 		
 		function createenemy()
-			if maplayer.bPause == false then
-				ob = IntelligentObject:create()
+			if maplayer.bPause == false and maplayer.enemycounts < 3 then
+				local ob = IntelligentObject:create()
 				ob:spriteini( batchnode:getTexture(), batchnode )
 			--	local ccSprite = CCSprite:createWithTexture( batchnode:getTexture() )
 			--	batchnode:addChild( ccSprite )
 				--ob:getsprite():runAction( CCJumpTo:create( 2, ccp(300,300), 100, 10 ))
 				
-				local ai = jumpai:create();
-				ai:settarget( ob )
-				ai:setendpt( ccp(300,300) )
-				ob:addai( ai )
-				
+				if maplayer.enemycounts == 0 then
+					ob.name = "mxm"
+				end
+				if maplayer.enemycounts == 1 then
+					ob.name = "seliber"
+				end
+				if maplayer.enemycounts == 0 then
+					local ai = jumpai:create();
+					ai:settarget( ob )
+					--ai:setendpt( ccp(300,300) )
+					ob:addai( ai )
+				end		
+				local follower = hp:create()
+				follower:ini( maplayer.layer, ob )
+				ob:addfollower( follower )
+
 				ob:getsprite():retain()
 				table.insert( map.obs, ob )
+				maplayer.enemycounts = maplayer.enemycounts+1
+			--	ob:updateai()
 			end
 		end
 		function updateai()
@@ -59,7 +73,7 @@ function main()
 		
 		
 		callbackfunc( createenemy, 1, false )
-		callbackfunc( updateai, 1, false )
+		callbackfunc( updateai, 0.1, false )
 		
 		maplayer.layer = createlayer()
 		
@@ -72,8 +86,14 @@ function main()
 		
 		local touchBeginPoint = nil
 
-        local function onTouchBegan(x, y)   
-            touchBeginPoint = {x = x, y = y}    
+        local function onTouchBegan(x, y)   		
+				for i, n in pairs(map.towers) do 
+					n:getsprite():removeFromParentAndCleanup();
+					table.remove( map.towers )
+				end 
+				
+			
+				touchBeginPoint = {x = x, y = y}    
 			
 				ob = IntelligentObject:create()
 				ob:spriteini( batchnode:getTexture(), batchnode )
@@ -129,6 +149,8 @@ function main()
 		
 		controllayer.layer = createlayer()
 		
+		
+
 		local function menucallback()
 			map.addobj("1")
 		end	
